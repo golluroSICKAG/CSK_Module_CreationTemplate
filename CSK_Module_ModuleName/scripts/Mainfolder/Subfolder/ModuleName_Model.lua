@@ -38,8 +38,11 @@ if _G.availableAPIs.specific then
 end
 ]]
 
---[[
+
 -- Create parameters / instances for this module
+moduleName_Model.styleForUI = 'None' -- Optional parameter to set UI style
+moduleName_Model.version = Engine.getCurrentAppVersion() -- Version of module
+--[[
 moduleName_Model.object = Image.create() -- Use any AppEngine CROWN
 moduleName_Model.counter = 1 -- Short docu of variable
 moduleName_Model.varA = 'value' -- Short docu of variable
@@ -48,6 +51,8 @@ moduleName_Model.varA = 'value' -- Short docu of variable
 
 -- Parameters to be saved permanently if wanted
 moduleName_Model.parameters = {}
+moduleName_Model.parameters.flowConfigPriority = CSK_FlowConfig ~= nil or false -- Status if FlowConfig should have priority for FlowConfig relevant configurations
+moduleName_Model.parameters.registerEvent = '' -- Event to get data
 --moduleName_Model.parameters.paramA = 'paramA' -- Short docu of variable
 --moduleName_Model.parameters.paramB = 123 -- Short docu of variable
 --...
@@ -58,11 +63,46 @@ moduleName_Model.parameters = {}
 --**********************Start Function Scope *******************************
 --**************************************************************************
 
+--- Function to react on UI style change
+local function handleOnStyleChanged(theme)
+  moduleName_Model.styleForUI = theme
+  Script.notifyEvent("ModuleName_OnNewStatusCSKStyle", moduleName_Model.styleForUI)
+end
+Script.register('CSK_PersistentData.OnNewStatusCSKStyle', handleOnStyleChanged)
+
+local function processData(data)
+  _G.logger:fine(nameOfModule .. ": Process data...")
+
+  -- Process data...
+  -- ...
+
+  Script.notifyEvent('ModuleName_OnNewResult', data)
+end
+moduleName_Model.processData = processData
+
+local function registerToEvent(event)
+  if moduleName_Model.parameters.registerEvent then
+    Script.deregister(moduleName_Model.parameters.registerEvent, processData)
+  end
+  moduleName_Model.parameters.registerEvent = event
+  Script.register(event, processData)
+end
+moduleName_Model.registerToEvent = registerToEvent
+
+local function deregisterFromEvent()
+  if moduleName_Model.parameters.registerEvent ~= '' then
+    Script.deregister(moduleName_Model.parameters.registerEvent, processData)
+    moduleName_Model.parameters.registerEvent = ''
+    Script.notifyEvent("ModuleName_OnNewStatusEventToRegister", moduleName_Model.parameters.registerEvent)
+  end
+end
+moduleName_Model.deregisterFromEvent = deregisterFromEvent
+
 --[[
 -- Some internal code docu for local used function to do something
 ---@param content auto Some info text if function is not already served
 local function doSomething(content)
-  _G.logger:info(nameOfModule .. ": Do something")
+  _G.logger:fine(nameOfModule .. ": Do something")
   moduleName_Model.counter = moduleName_Model.counter + 1
 end
 moduleName_Model.doSomething = doSomething
